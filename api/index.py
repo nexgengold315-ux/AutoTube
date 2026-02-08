@@ -3,14 +3,15 @@ from flask_cors import CORS
 import yt_dlp
 
 app = Flask(__name__)
-CORS(app) 
+# Ye line sabse zaroori hai, ye HopWeb ko ijazat degi
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-@app.route('/')
-def home():
-    return "Downloader API is Running!"
-
-@app.route('/get_video_info', methods=['POST'])
+@app.route('/api/get_video_info', methods=['POST', 'OPTIONS'])
 def get_info():
+    # CORS pre-flight request handle karne ke liye
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+        
     data = request.json
     url = data.get('url')
     
@@ -39,11 +40,15 @@ def get_info():
                 'title': info.get('title'),
                 'thumbnail': info.get('thumbnail'),
                 'duration': info.get('duration_string'),
-                'links': formats[:3] 
+                'links': formats[:3]
             })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Vercel ke liye ye zaroori hai
+def handler(event, context):
+    return app(event, context)
+
 if __name__ == '__main__':
     app.run()
-  
+    
